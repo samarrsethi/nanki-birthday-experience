@@ -2,59 +2,71 @@ import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
-import { X } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 
 import { siteContent } from './data/content';
-import CustomCursor from './components/CustomCursor';
+import { ambientAudio } from './utils/ambientAudio';
 import PreloaderIntro from './components/PreloaderIntro';
-import HeroCanvas from './components/HeroCanvas';
-import PhotoPlaceholder from './components/PhotoPlaceholder';
-import ParticleContact from './components/ParticleContact';
+import LoveLetterEnvelope from './components/LoveLetterEnvelope';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function App() {
   const [introDone, setIntroDone] = useState(false);
-  const [activeNav, setActiveNav] = useState('about');
-  const [selectedMemory, setSelectedMemory] = useState(null);
-  const [apologyOpen, setApologyOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+  const [activeNav, setActiveNav] = useState('story');
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   const mainRef = useRef(null);
-  const progressBarRef = useRef(null);
+  const progressRef = useRef(null);
   const lenisRef = useRef(null);
 
-  // Lenis smooth scroll wired to GSAP ScrollTrigger
+  // Detect prefers-reduced-motion
   useEffect(() => {
-    if (!introDone) return;
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const handler = (e) => setReducedMotion(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Initialize Lenis smooth scroll synced with GSAP ScrollTrigger
+  useEffect(() => {
+    if (!introDone || reducedMotion) return;
 
     const lenis = new Lenis({
-      duration: 1.25,
+      duration: 1.15,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     });
     lenisRef.current = lenis;
 
     lenis.on('scroll', ScrollTrigger.update);
-    const update = (time) => lenis.raf(time * 1000);
-    gsap.ticker.add(update);
+    const tick = (time) => lenis.raf(time * 1000);
+    gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
+    setTimeout(() => ScrollTrigger.refresh(), 120);
+
     return () => {
-      gsap.ticker.remove(update);
+      gsap.ticker.remove(tick);
       lenis.destroy();
       lenisRef.current = null;
     };
-  }, [introDone]);
+  }, [introDone, reducedMotion]);
 
-  // Master GSAP ScrollTrigger choreography
+  // Coordinated GSAP ScrollTrigger Choreography
   useEffect(() => {
     if (!introDone) return;
 
     const ctx = gsap.context(() => {
-      // 1. Navbar scroll progress bar
-      if (progressBarRef.current) {
+      if (reducedMotion) return;
+
+      // 1. Top 1px progress bar
+      if (progressRef.current) {
         gsap.fromTo(
-          progressBarRef.current,
+          progressRef.current,
           { scaleX: 0 },
           {
             scaleX: 1,
@@ -69,193 +81,143 @@ export default function App() {
         );
       }
 
-      // 2. Hero title character-by-character clipped reveal
+      // 2. Hero subtle entrance + parallax
       gsap.fromTo(
-        '.hero-char',
-        { yPercent: 115, opacity: 0 },
-        {
-          yPercent: 0,
-          opacity: 1,
-          duration: 1.0,
-          stagger: 0.045,
-          ease: 'power4.out',
-          delay: 0.15,
-        }
+        '.hero-stagger',
+        { y: 22, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.85, stagger: 0.1, ease: 'power3.out' }
       );
 
-      gsap.fromTo(
-        '.hero-fade',
-        { y: 18, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.9, stagger: 0.08, ease: 'power3.out', delay: 0.35 }
-      );
-
-      // 3. About word-by-word scrub reveal
-      gsap.fromTo(
-        '.scrub-word',
-        { opacity: 0.15 },
-        {
-          opacity: 1,
-          stagger: 0.03,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '#about',
-            start: 'top 72%',
-            end: 'bottom 68%',
-            scrub: 0.8,
-          },
-        }
-      );
-
-      // About portrait parallax + grayscale-to-color scrub
-      gsap.to('.about-portrait', {
-        y: -35,
+      gsap.to('.hero-photo-parallax', {
+        y: 36,
         ease: 'none',
         scrollTrigger: {
-          trigger: '#about',
-          start: 'top bottom',
+          trigger: '#top',
+          start: 'top top',
           end: 'bottom top',
           scrub: true,
         },
       });
 
+      // 3. Priority 3: Scroll-Illuminated Text (#BEB2C4 -> #514753) + coordinated photos
       gsap.fromTo(
-        '.scrub-color-img',
-        { filter: 'grayscale(1)' },
+        '.illum-word',
+        { color: '#BEB2C4' },
         {
-          filter: 'grayscale(0)',
+          color: '#514753',
+          stagger: 0.025,
           ease: 'none',
           scrollTrigger: {
-            trigger: '#about',
-            start: 'top 65%',
-            end: 'bottom 55%',
-            scrub: true,
+            trigger: '#story',
+            start: 'top 68%',
+            end: 'bottom 76%',
+            scrub: 0.6,
           },
         }
       );
 
-      // 4. Section heading clipped slide-up reveals
-      gsap.utils.toArray('[data-heading="true"]').forEach((el) => {
+      gsap.utils.toArray('.illum-photo').forEach((el, i) => {
         gsap.fromTo(
           el,
-          { yPercent: 100, opacity: 0 },
+          { y: i % 2 === 0 ? 35 : 55, opacity: 0.4, scale: 0.96 },
           {
-            yPercent: 0,
+            y: 0,
             opacity: 1,
-            duration: 0.9,
-            ease: 'power3.out',
+            scale: 1,
+            ease: 'none',
             scrollTrigger: {
               trigger: el,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
+              start: 'top 88%',
+              end: 'top 45%',
+              scrub: 0.8,
             },
           }
         );
       });
 
-      // 5. Sticky Stacking Cards scale-down choreography
-      const stackCards = gsap.utils.toArray('[data-stack="true"]');
-      stackCards.forEach((card, i) => {
-        if (i < stackCards.length - 1) {
-          const targetScale = 0.86 + i * 0.03;
-          gsap.to(card, {
-            scale: targetScale,
-            opacity: 0.65,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: stackCards[i + 1],
-              start: 'top 80%',
-              end: 'top 20%',
-              scrub: true,
-            },
-          });
+      // 4. Priority 5: Numbered Photographic Chapters scrubbed transitions
+      gsap.utils.toArray('.chapter-row').forEach((row) => {
+        const img = row.querySelector('.chapter-img');
+        const text = row.querySelector('.chapter-text');
+
+        if (img) {
+          gsap.fromTo(
+            img,
+            { scale: 1.08, y: 24 },
+            {
+              scale: 1,
+              y: 0,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: row,
+                start: 'top 88%',
+                end: 'top 35%',
+                scrub: 0.9,
+              },
+            }
+          );
+        }
+
+        if (text) {
+          gsap.fromTo(
+            text,
+            { y: 28, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.8,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: row,
+                start: 'top 78%',
+                toggleActions: 'play none none reverse',
+              },
+            }
+          );
         }
       });
 
-      // 6. Love Letter paragraph reveals
-      gsap.utils.toArray('.love-para').forEach((p) => {
+      // 5. Timeline vertical hairline draw
+      const line = document.querySelector('.timeline-line');
+      if (line) {
         gsap.fromTo(
-          p,
-          { y: 28, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.85,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: p,
-              start: 'top 86%',
-              toggleActions: 'play none none none',
-            },
-          }
-        );
-      });
-
-      // 7. Generic reveal items (bento cards, timeline entries)
-      gsap.utils.toArray('[data-reveal="true"]').forEach((el, idx) => {
-        gsap.fromTo(
-          el,
-          { y: 36, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.85,
-            delay: (idx % 3) * 0.08,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: el,
-              start: 'top 86%',
-              toggleActions: 'play none none none',
-            },
-          }
-        );
-      });
-
-      // 8. Journey vertical timeline line draw
-      const journeyLine = document.querySelector('[data-line="true"]');
-      if (journeyLine) {
-        gsap.fromTo(
-          journeyLine,
+          line,
           { scaleY: 0 },
           {
             scaleY: 1,
             ease: 'none',
             scrollTrigger: {
-              trigger: '#journey',
-              start: 'top 65%',
+              trigger: '#timeline',
+              start: 'top 70%',
               end: 'bottom 75%',
-              scrub: 1,
+              scrub: 0.8,
             },
           }
         );
       }
 
-      // 9. Stats count-up
-      gsap.utils.toArray('[data-count]').forEach((el) => {
-        const targetVal = parseInt(el.getAttribute('data-count'), 10) || 0;
-        const suffix = el.getAttribute('data-suffix') || '';
-        const obj = { val: 0 };
-
-        gsap.to(obj, {
-          val: targetVal,
-          duration: 1.6,
-          ease: 'power2.out',
+      // 6. Priority 6: Smooth background shift to muted grey-lilac (#E1DAE6) for Apology
+      gsap.fromTo(
+        '#apology',
+        { backgroundColor: '#F4F0F5' },
+        {
+          backgroundColor: '#E1DAE6',
+          ease: 'none',
           scrollTrigger: {
-            trigger: el,
-            start: 'top 85%',
-            toggleActions: 'play none none none',
+            trigger: '#apology',
+            start: 'top 80%',
+            end: 'top 25%',
+            scrub: true,
           },
-          onUpdate: () => {
-            el.textContent = `${Math.round(obj.val)}${suffix}`;
-          },
-        });
-      });
+        }
+      );
 
-      // 10. Active nav tracking
-      ['about', 'work', 'love-letter', 'wins', 'contact'].forEach((id) => {
-        const section = document.getElementById(id);
-        if (!section) return;
+      // 7. Active nav link tracking
+      ['story', 'chapters', 'love-letter', 'apology'].forEach((id) => {
+        const sec = document.getElementById(id);
+        if (!sec) return;
         ScrollTrigger.create({
-          trigger: section,
+          trigger: sec,
           start: 'top 50%',
           end: 'bottom 50%',
           onEnter: () => setActiveNav(id),
@@ -265,515 +227,360 @@ export default function App() {
     }, mainRef);
 
     return () => ctx.revert();
-  }, [introDone]);
+  }, [introDone, reducedMotion]);
 
-  const scrollTo = (id) => {
+  const scrollToSection = (id) => {
     const el = document.querySelector(id);
     if (!el) return;
     if (lenisRef.current) {
-      lenisRef.current.scrollTo(el, { duration: 1.4 });
+      lenisRef.current.scrollTo(el, { offset: -72, duration: 1.25 });
     } else {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  const aboutWords = siteContent.about.scrubText.split(' ');
-  const heroChars = siteContent.herNameUpper.split('');
+  const toggleSound = () => {
+    if (soundOn) {
+      ambientAudio.stop();
+      setSoundOn(false);
+    } else {
+      ambientAudio.start(siteContent.audioSrc);
+      setSoundOn(true);
+    }
+  };
+
+  const storyWords = siteContent.illuminatedStory.text.split(' ');
 
   return (
-    <div ref={mainRef} className="relative bg-[#070709] text-white min-h-screen">
-      {/* Film Grain Overlay */}
-      <div className="grain-overlay" aria-hidden="true" />
+    <div ref={mainRef} className="relative bg-[#FCFBF9] text-[#514753] min-h-screen">
+      {/* Subtle Paper Grain */}
+      <div className="paper-grain" aria-hidden="true" />
 
-      {/* Custom Blend Cursor */}
-      <CustomCursor />
+      {/* Priority 2: 15–20s Cinematic Introduction */}
+      {!introDone && (
+        <PreloaderIntro
+          reducedMotion={reducedMotion}
+          onSoundChoice={(enabled) => setSoundOn(enabled)}
+          onComplete={() => setIntroDone(true)}
+        />
+      )}
 
-      {/* Minimal Preloader & True-Ratio Cinematic Film Intro */}
-      {!introDone && <PreloaderIntro onComplete={() => setIntroDone(true)} />}
-
-      {/* Fixed Top Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-40 bg-[#070709]/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between font-mono-label text-xs tracking-[0.18em] uppercase">
+      {/* Fixed Editorial Header (Zero mobile collision/wrapping) */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#FCFBF9]/85 backdrop-blur-md border-b border-[#E6DCEB]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={() => scrollTo('#top')}
-            className="text-white hover:text-[#c4b5fd] transition-colors font-semibold"
+            onClick={() => scrollToSection('#top')}
+            className="font-editorial-italic text-xl sm:text-2xl text-[#514753] shrink-0 whitespace-nowrap cursor-pointer"
           >
-            {siteContent.herNameUpper}
+            {siteContent.nickname}
           </button>
 
-          <div className="flex items-center gap-5 md:gap-8 text-[11px]">
+          <nav className="flex items-center gap-3.5 sm:gap-7 font-mono-meta text-[10px] sm:text-[11px] tracking-[0.12em] uppercase">
             {[
-              { id: 'about', label: 'STORY' },
-              { id: 'work', label: 'MEMORIES' },
-              { id: 'love-letter', label: 'LOVE LETTER' },
-              { id: 'contact', label: 'APOLOGY' },
+              { id: 'story', label: 'Story' },
+              { id: 'chapters', label: 'Memories' },
+              { id: 'love-letter', label: 'Letter' },
+              { id: 'apology', label: 'Apology' },
             ].map((item) => (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => scrollTo(`#${item.id}`)}
-                className={`transition-colors ${
-                  activeNav === item.id ? 'text-[#c4b5fd]' : 'text-zinc-400 hover:text-white'
+                onClick={() => scrollToSection(`#${item.id}`)}
+                className={`whitespace-nowrap transition-colors cursor-pointer ${
+                  activeNav === item.id
+                    ? 'text-[#514753] font-medium underline underline-offset-4 decoration-[#C5B6CC]'
+                    : 'text-[#7C7080] hover:text-[#514753]'
                 }`}
               >
                 {item.label}
               </button>
             ))}
-          </div>
+
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-label={soundOn ? 'Mute ambient sound' : 'Play ambient sound'}
+              className="p-1.5 text-[#7C7080] hover:text-[#514753] transition-colors cursor-pointer shrink-0"
+            >
+              {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            </button>
+          </nav>
         </div>
-        {/* 1px Purple-to-Green Scroll Progress Bar */}
+
+        {/* 1px Scroll Progress Indicator */}
         <div
-          ref={progressBarRef}
-          className="h-[1.5px] bg-gradient-to-r from-[#c4b5fd] to-[#86efac] origin-left w-full"
+          ref={progressRef}
+          className="h-[1.5px] bg-[#C5B6CC] origin-left w-full"
           style={{ transform: 'scaleX(0)' }}
         />
-      </nav>
-
-      {/* HERO (#top) */}
-      <header
-        id="top"
-        className="relative h-[100svh] w-full flex flex-col justify-end overflow-hidden bg-[#070709]"
-      >
-        {/* Three.js Purple & Green Particle Terrain */}
-        {introDone && <HeroCanvas />}
-
-        {/* Top & Bottom Vignette */}
-        <div
-          className="absolute inset-0 bg-gradient-to-b from-[#070709] via-transparent to-[#070709]/95 pointer-events-none z-10"
-          aria-hidden="true"
-        />
-
-        {/* Bottom Metadata + Edge-to-Edge Wordmark */}
-        <div className="relative z-20 w-full px-4 md:px-10 pb-4 md:pb-6 pointer-events-none">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 items-center font-mono-label text-[11px] md:text-xs tracking-[0.14em] uppercase text-zinc-400 mb-3 md:mb-4 border-t border-white/10 pt-4">
-            <div className="hero-fade text-[#c4b5fd]">{siteContent.hero.leftMeta}</div>
-            <div className="hero-fade md:text-center text-zinc-300">{siteContent.hero.centerMeta}</div>
-            <div className="hero-fade md:text-right flex md:justify-end items-center gap-2 text-white">
-              <span className="w-2 h-2 rounded-full bg-[#86efac] animate-pulse" />
-              <span>{siteContent.hero.rightMeta}</span>
-            </div>
-          </div>
-
-          <h1
-            className="w-full text-[16.4vw] leading-[0.84] font-bold tracking-[-0.04em] uppercase text-white flex justify-between select-none"
-            aria-label={siteContent.herNameUpper}
-          >
-            {heroChars.map((ch, idx) => (
-              <span key={idx} className="inline-block overflow-clip">
-                <span className="hero-char inline-block">{ch}</span>
-              </span>
-            ))}
-          </h1>
-        </div>
       </header>
 
-      {/* 01 / ABOUT HER */}
-      <section id="about" className="relative py-28 md:py-40 px-6 md:px-10 max-w-6xl mx-auto">
-        <p className="font-mono-label text-xs tracking-[0.2em] uppercase text-[#f0b4df]/75 mb-10">
-          {siteContent.about.eyebrow}
-        </p>
+      {/* BIRTHDAY HERO (#top) */}
+      <section
+        id="top"
+        className="relative min-h-[100svh] flex items-center pt-20 pb-12 px-5 sm:px-8 overflow-hidden bg-[#FCFBF9]"
+      >
+        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-[1.15fr_0.85fr] gap-10 md:gap-14 items-center">
+          {/* Left: Editorial Typography */}
+          <div className="space-y-5 text-left">
+            <p className="hero-stagger font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080]">
+              {siteContent.hero.kicker}
+            </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_290px] gap-12 md:gap-16 items-start">
-          <p className="text-2xl sm:text-3xl md:text-[2.35rem] leading-[1.35] font-normal tracking-[-0.015em] text-zinc-100">
-            {aboutWords.map((word, idx) => (
-              <span key={idx} className="scrub-word inline-block mr-[0.28em]">
-                {word}
-              </span>
-            ))}
-          </p>
+            <h1 className="hero-stagger font-editorial text-[clamp(2.6rem,5.4vw,4.9rem)] leading-[1.03] tracking-[-0.02em] text-[#514753]">
+              {siteContent.hero.titleLine1}
+              <br />
+              <span className="font-editorial-italic">{siteContent.hero.titleLine2}</span>
+            </h1>
 
-          <div className="about-portrait aspect-[9/16] max-w-[270px] w-full mx-auto md:mx-0 rounded-2xl overflow-hidden">
-            <PhotoPlaceholder
-              src={siteContent.about.photo}
-              alt="Nanki and Samar"
-              slot={siteContent.about.photoLabel}
-              caption={siteContent.about.photoHint}
-              grayscaleScrub
-            />
+            <p className="hero-stagger text-base sm:text-lg text-[#7C7080] max-w-md leading-relaxed">
+              {siteContent.hero.subtitle}
+            </p>
+
+            <div className="hero-stagger pt-2">
+              <button
+                type="button"
+                onClick={() => scrollToSection('#story')}
+                className="font-mono-meta text-[11px] tracking-[0.18em] uppercase text-[#514753] border-b border-[#C5B6CC] pb-1 hover:border-[#514753] transition-colors cursor-pointer"
+              >
+                Begin the story &darr;
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Dominant Hero Photograph in true 9:16 ratio */}
+          <div className="flex justify-center md:justify-end">
+            <div className="hero-photo-parallax w-[230px] sm:w-[270px] md:w-[300px] aspect-[9/16] overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/50 shadow-[0_24px_60px_-18px_rgba(81,71,83,0.18)]">
+              <img
+                src={siteContent.hero.heroPhoto}
+                alt="Harseerat and Samar"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* DUAL-ROW INFINITE MARQUEE */}
-      <section aria-label="Birthday feelings marquee" className="py-12 border-y border-white/10 overflow-hidden bg-[#070709]">
-        <div className="animate-marquee mb-3">
-          {[...siteContent.marqueeItems, ...siteContent.marqueeItems].map((item, idx) => (
-            <div key={idx} className="flex items-center gap-8 mx-4">
-              <span className="text-4xl md:text-6xl font-bold tracking-tight uppercase text-zinc-600 hover:text-white transition-colors">
-                {item}
-              </span>
-              <span className="text-[#86efac] text-xl md:text-2xl">&bull;</span>
-            </div>
-          ))}
-        </div>
+      {/* 01 / WHO YOU ARE — SCROLL-ILLUMINATED TEXT (Priority 3) */}
+      <section id="story" className="py-24 md:py-36 px-5 sm:px-8 bg-[#F4F0F5]">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 lg:gap-16 items-start">
+          <div className="space-y-6">
+            <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
+              {siteContent.illuminatedStory.eyebrow}
+            </span>
 
-        <div className="animate-marquee-reverse">
-          {[...siteContent.marqueeItems, ...siteContent.marqueeItems].map((item, idx) => (
-            <div key={idx} className="flex items-center gap-8 mx-4">
-              <span className="text-4xl md:text-6xl font-bold tracking-tight uppercase text-stroke-purple">
-                {item}
-              </span>
-              <span className="text-[#c4b5fd]/40 text-xl md:text-2xl">&bull;</span>
-            </div>
-          ))}
+            <p className="font-editorial text-[clamp(1.65rem,3.1vw,2.65rem)] leading-[1.35] tracking-[-0.01em]">
+              {storyWords.map((word, idx) => (
+                <span key={idx} className="illum-word inline-block mr-[0.26em] text-[#BEB2C4]">
+                  {word}
+                </span>
+              ))}
+            </p>
+          </div>
+
+          {/* Coordinated Photographs */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 pt-2">
+            {siteContent.illuminatedStory.photos.map((item, idx) => (
+              <figure
+                key={idx}
+                className={`illum-photo ${idx === 1 ? 'mt-8 sm:mt-12' : ''}`}
+              >
+                <div className={`${item.ratio} w-full overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/40`}>
+                  <img
+                    src={item.src}
+                    alt={item.label}
+                    loading="lazy"
+                    className="w-full h-full object-cover object-top"
+                  />
+                </div>
+                <figcaption className="font-mono-meta text-[10px] tracking-[0.16em] uppercase text-[#7C7080] mt-2.5">
+                  {item.label}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* 02 / MEMORIES (STICKY STACKING CARDS) */}
-      <section id="work" className="py-28 md:py-40 px-6 md:px-10 max-w-6xl mx-auto">
-        <p className="font-mono-label text-xs tracking-[0.2em] uppercase text-[#f0b4df]/75 mb-4">
-          02 / CHERISHED MOMENTS
-        </p>
-        <div className="overflow-clip mb-16 md:mb-24">
-          <h2
-            data-heading="true"
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05]"
-          >
-            Moments I still <em className="font-serif-italic text-[#f0b4df]">cherish.</em>
-          </h2>
+      {/* QUIET EDITORIAL MARQUEE */}
+      <div className="py-6 border-y border-[#E6DCEB] bg-[#FCFBF9] overflow-hidden" aria-hidden="true">
+        <div className="animate-marquee-slow">
+          {[...siteContent.marqueeWords, ...siteContent.marqueeWords].map((word, idx) => (
+            <div key={idx} className="flex items-center gap-8 mx-4">
+              <span className="font-editorial-italic text-2xl sm:text-3xl text-[#7C7080] tracking-wide">
+                {word.toLowerCase()}
+              </span>
+              <span className="text-[#C5B6CC] text-xs">&bull;</span>
+            </div>
+          ))}
         </div>
+      </div>
 
-        <div className="space-y-12 md:space-y-16">
-          {siteContent.memories.map((mem, i) => (
-            <article
-              key={mem.id}
-              data-stack="true"
-              style={{ top: `calc(5.5rem + ${i * 1.15}rem)` }}
-              className="sticky origin-top rounded-3xl bg-[#0e0e13] border border-white/10 overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-[1.45fr_1fr] min-h-[70vh] md:h-[76vh]"
-            >
-              {/* Left: Photo Frame */}
-              <div className="p-4 md:p-6 h-64 md:h-full">
-                <PhotoPlaceholder
-                  src={mem.photo}
-                  alt={mem.title}
-                  slot={mem.photoSlot}
-                  caption={mem.photoCaption}
-                  cursorLabel="VIEW ↗"
-                  className="rounded-2xl"
-                />
-              </div>
+      {/* 02 / CHAPTERS IN TIME — EDITORIAL PHOTO SHOWCASES (Priority 5) */}
+      <section id="chapters" className="py-24 md:py-36 px-5 sm:px-8 bg-[#FCFBF9]">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-xl mb-16 md:mb-24 space-y-3">
+            <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
+              02 / MEMORIES
+            </span>
+            <h2 className="font-editorial text-4xl sm:text-5xl md:text-6xl text-[#514753] leading-[1.08]">
+              Five moments I still <span className="font-editorial-italic">hold dear.</span>
+            </h2>
+          </div>
 
-              {/* Right: Memory Details */}
-              <div className="p-7 md:p-10 flex flex-col justify-between border-t md:border-t-0 md:border-l border-white/10">
-                <div>
-                  <span className="font-mono-label text-xs tracking-[0.2em] text-[#f0b4df]">
-                    {mem.counter}
-                  </span>
-                  <h3 className="text-3xl md:text-4xl font-bold tracking-tight mt-4 mb-4">
-                    {mem.title}
-                  </h3>
-                  <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
-                    {mem.description}
-                  </p>
-                </div>
-
-                <div className="space-y-6 mt-8">
-                  <div className="flex flex-wrap gap-2">
-                    {mem.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] font-mono-label text-[11px] uppercase tracking-wider text-zinc-300"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+          <div className="space-y-24 md:space-y-32">
+            {siteContent.photoChapters.map((chapter, idx) => {
+              const isReversed = idx % 2 === 1;
+              return (
+                <article
+                  key={chapter.number}
+                  className="chapter-row grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center"
+                >
+                  {/* Dominant Photograph in true aspect ratio */}
+                  <div
+                    className={`md:col-span-7 ${
+                      isReversed ? 'md:order-2' : 'md:order-1'
+                    }`}
+                  >
+                    <div
+                      className={`${chapter.ratio} max-h-[68vh] w-full mx-auto overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/45`}
+                    >
+                      <img
+                        src={chapter.photo}
+                        alt={chapter.title}
+                        loading="lazy"
+                        className="chapter-img w-full h-full object-cover object-top"
+                      />
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    data-magnetic="true"
-                    onClick={() => setSelectedMemory(mem)}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#f0b4df] text-black font-mono-label text-xs font-semibold uppercase tracking-wider hover:scale-105 transition-transform"
+                  {/* Minimal Editorial Typography */}
+                  <div
+                    className={`chapter-text md:col-span-5 space-y-4 ${
+                      isReversed ? 'md:order-1 md:pr-6' : 'md:order-2 md:pl-6'
+                    }`}
                   >
-                    Read memory &nearr;
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+                    <div className="flex items-center gap-3 font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080]">
+                      <span className="text-[#514753] font-medium">
+                        {chapter.number} / {chapter.total}
+                      </span>
+                      <span className="w-6 h-[1px] bg-[#C5B6CC]" />
+                      <span>{chapter.subtitle}</span>
+                    </div>
+
+                    <h3 className="font-editorial text-3xl sm:text-4xl text-[#514753] leading-tight">
+                      {chapter.title}
+                    </h3>
+
+                    <p className="text-base sm:text-lg text-[#7C7080] leading-relaxed">
+                      {chapter.description}
+                    </p>
+
+                    <p className="font-editorial-italic text-xl text-[#514753] pt-2 border-t border-[#E6DCEB]">
+                      {chapter.note}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* 03 / A LOVE LETTER (IN BETWEEN) */}
-      <section id="love-letter" className="relative py-28 md:py-40 px-6 md:px-10 max-w-5xl mx-auto">
-        <p className="font-mono-label text-xs tracking-[0.2em] uppercase text-[#f0b4df]/75 mb-4">
-          {siteContent.loveLetter.eyebrow}
-        </p>
-        <div className="overflow-clip mb-14">
-          <h2
-            data-heading="true"
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05]"
-          >
-            {siteContent.loveLetter.headingPrimary}{' '}
-            <em className="font-serif-italic text-[#f0b4df]">{siteContent.loveLetter.headingItalic}</em>
-          </h2>
+      {/* 03 / A LOVE LETTER — ENVELOPE + PAPER EXTRACTION ABOVE ENVELOPE (Priority 4) */}
+      <LoveLetterEnvelope reducedMotion={reducedMotion} />
+
+      {/* 04 / OUR TIMELINE */}
+      <section id="timeline" className="py-24 md:py-32 px-5 sm:px-8 bg-[#FCFBF9]">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-14 space-y-2">
+            <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
+              {siteContent.milestones.eyebrow}
+            </span>
+            <h2 className="font-editorial text-3xl sm:text-5xl text-[#514753]">
+              {siteContent.milestones.heading}
+            </h2>
+          </div>
+
+          <div className="relative pl-7 sm:pl-10 space-y-12">
+            <div className="timeline-line absolute left-0 top-1 bottom-1 w-[1px] bg-[#C5B6CC] origin-top" />
+
+            {siteContent.milestones.entries.map((entry, idx) => (
+              <div key={idx} className="relative">
+                <span className="absolute -left-[31.5px] sm:-left-[43.5px] top-2 w-2 h-2 rounded-full bg-[#514753]" />
+                <span className="font-mono-meta text-[10px] tracking-[0.2em] uppercase text-[#7C7080] block">
+                  {entry.label} · {entry.subtitle}
+                </span>
+                <h3 className="font-editorial text-2xl sm:text-3xl text-[#514753] mt-1">
+                  {entry.title}
+                </h3>
+                <p className="text-sm sm:text-base text-[#7C7080] mt-2 max-w-xl leading-relaxed">
+                  {entry.detail}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
+      </section>
 
-        <div className="relative rounded-3xl bg-[#0e0e13] border border-white/10 p-8 md:p-16 overflow-hidden shadow-2xl">
-          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#c4b5fd]/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#86efac]/10 blur-3xl pointer-events-none" />
+      {/* 05 / A SINCERE APOLOGY — MUTED GREY-LILAC TRANSITION (Priority 6) */}
+      <section id="apology" className="py-28 md:py-40 px-5 sm:px-8 bg-[#F4F0F5]">
+        <div className="max-w-2xl mx-auto">
+          <div className="space-y-3 mb-12">
+            <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
+              {siteContent.apologyLetter.eyebrow}
+            </span>
+            <h2 className="font-editorial text-3xl sm:text-5xl text-[#514753] leading-tight">
+              {siteContent.apologyLetter.heading}
+            </h2>
+          </div>
 
-          <div className="relative z-10 max-w-3xl space-y-7">
-            <p className="love-para font-serif-italic text-3xl md:text-4xl text-[#f0b4df]">
-              {siteContent.loveLetter.salutation}
+          <div className="bg-[#FCFBF9]/90 border border-[#C5B6CC]/70 p-7 sm:p-12 space-y-5 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.1)]">
+            <p className="font-editorial-italic text-2xl sm:text-3xl text-[#514753]">
+              {siteContent.apologyLetter.salutation}
             </p>
 
-            {siteContent.loveLetter.paragraphs.map((para, i) => (
+            {siteContent.apologyLetter.paragraphs.map((para, idx) => (
               <p
-                key={i}
-                className="love-para text-lg md:text-xl leading-[1.75] text-zinc-200 font-light"
+                key={idx}
+                className={
+                  para === 'I cheated on you.'
+                    ? 'font-editorial text-xl sm:text-2xl text-[#514753] font-medium pl-4 border-l-2 border-[#514753] py-1'
+                    : 'text-sm sm:text-base md:text-[17px] leading-[1.8] text-[#514753]'
+                }
               >
                 {para}
               </p>
             ))}
 
-            <div className="love-para pt-6 border-t border-white/10 flex items-center justify-between">
-              <span className="font-serif-italic text-2xl md:text-3xl text-white">
-                {siteContent.loveLetter.signoff}
+            <div className="pt-6 border-t border-[#E6DCEB] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span className="font-editorial-italic text-2xl text-[#514753]">
+                {siteContent.apologyLetter.closing}
               </span>
-              <span className="font-mono-label text-[11px] tracking-[0.18em] uppercase text-zinc-500">
-                December 1
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 04 / LITTLE THINGS (ASYMMETRIC BENTO GRID) */}
-      <section id="wins" className="py-24 md:py-36 px-6 md:px-10 max-w-6xl mx-auto">
-        <p className="font-mono-label text-xs tracking-[0.2em] uppercase text-[#f0b4df]/75 mb-4">
-          04 / LITTLE MILESTONES
-        </p>
-        <div className="overflow-clip mb-14">
-          <h2
-            data-heading="true"
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.05]"
-          >
-            Proof of <em className="font-serif-italic text-[#f0b4df]">you.</em>
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
-          {siteContent.milestones.map((item) => (
-            <div
-              key={item.id}
-              data-reveal="true"
-              className={`${item.colSpan} group rounded-3xl bg-[#0e0e13] border border-white/10 p-5 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:border-[#86efac]/50`}
-            >
-              <div className="h-52 md:h-60 rounded-2xl overflow-hidden mb-5">
-                <PhotoPlaceholder
-                  src={item.photo}
-                  alt={item.title}
-                  slot={item.photoSlot}
-                  caption="Us"
-                  cursorLabel="PHOTO"
-                  className="rounded-2xl"
-                />
-              </div>
-
-              <div>
-                <span className="inline-block px-3 py-1 rounded-full bg-[#f0b4df]/10 border border-[#f0b4df]/30 font-mono-label text-[10px] uppercase tracking-widest text-[#f0b4df] mb-3">
-                  {item.badge}
-                </span>
-                <h3 className="text-xl md:text-2xl font-bold tracking-tight group-hover:text-[#f0b4df] transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-zinc-400 text-sm mt-1.5">{item.subtitle}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 05 / TIMELINE (VERTICAL SCROLL-DRAWN LINE) */}
-      <section id="journey" className="py-24 md:py-36 px-6 md:px-10 max-w-5xl mx-auto">
-        <p className="font-mono-label text-xs tracking-[0.2em] uppercase text-[#f0b4df]/75 mb-14">
-          05 / OUR CHAPTERS
-        </p>
-
-        <div className="relative pl-8 md:pl-12 space-y-14">
-          {/* Vertical animated line */}
-          <div
-            data-line="true"
-            className="absolute left-0 top-0 bottom-0 w-[2px] origin-top bg-gradient-to-b from-[#f0b4df] via-[#f0b4df]/40 to-transparent"
-          />
-
-          {siteContent.journey.map((step, i) => (
-            <div key={i} data-reveal="true" className="relative">
-              <span className="absolute -left-[37px] md:-left-[53px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#f0b4df] ring-4 ring-[#050505]" />
-              <span className="font-mono-label text-xs uppercase tracking-[0.18em] text-[#f0b4df]">
-                {step.date}
-              </span>
-              <h3 className="text-2xl md:text-3xl font-bold tracking-tight mt-2">
-                {step.title}{' '}
-                <span className="text-zinc-500 font-normal text-lg md:text-2xl">{step.org}</span>
-              </h3>
-              <p className="text-zinc-400 mt-2 max-w-2xl leading-relaxed">{step.detail}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* STATS COUNTER BAND */}
-      <section className="border-y border-white/10 py-20 px-6 md:px-10 bg-[#070709]">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
-          {siteContent.stats.map((stat, i) => (
-            <div key={i}>
-              <div
-                data-count={stat.value}
-                data-suffix={stat.suffix}
-                className="text-6xl md:text-8xl font-bold tracking-tighter text-white tabular-nums"
-              >
-                0{stat.suffix}
-              </div>
-              <p className="font-mono-label text-xs uppercase tracking-[0.18em] text-zinc-400 mt-3">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 06 / HONEST APOLOGY LETTER AT THE END (#contact) */}
-      <section id="contact" className="relative py-36 md:py-48 px-6 md:px-10 overflow-hidden">
-        <div className="contact-glow absolute inset-0 pointer-events-none" aria-hidden="true" />
-
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <p className="font-mono-label text-xs tracking-[0.2em] uppercase text-[#f0b4df]/75 mb-6">
-            {siteContent.apologyLetter.eyebrow}
-          </p>
-
-          <div className="overflow-clip mb-10">
-            <h2
-              data-heading="true"
-              className="text-5xl sm:text-7xl md:text-[8.5vw] font-bold tracking-tight leading-[0.95]"
-            >
-              {siteContent.apologyLetter.headingPrimary}
-              <br />
-              <em className="font-serif-italic text-[#f0b4df]">
-                {siteContent.apologyLetter.headingItalic}
-              </em>
-            </h2>
-          </div>
-
-          {/* Interactive Dot-Particle Canvas (Hover to scatter, Click to burst) */}
-          <ParticleContact
-            text={siteContent.apologyLetter.particlePhrase}
-            onParticleClick={() => setApologyOpen(true)}
-          />
-
-          <div className="mt-10 flex justify-center">
-            <button
-              type="button"
-              data-magnetic="true"
-              onClick={() => setApologyOpen((prev) => !prev)}
-              className="px-8 py-4 rounded-full bg-white text-black font-medium text-sm md:text-base hover:scale-105 transition-transform"
-            >
-              {apologyOpen ? 'Hide apology letter ↑' : 'Read my apology letter ↗'}
-            </button>
-          </div>
-
-          {/* Sincere Cheating Apology Letter */}
-          <div
-            className={`mt-14 text-left max-w-3xl mx-auto rounded-3xl bg-[#0e0e13] border border-white/15 p-8 md:p-14 transition-all duration-700 ${
-              apologyOpen ? 'opacity-100 translate-y-0' : 'opacity-95'
-            }`}
-          >
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-8 font-mono-label text-[11px] uppercase tracking-[0.2em] text-zinc-500">
-              <span>HONESTLY &amp; WITHOUT EXCUSES</span>
-              <span className="text-[#f0b4df]">FOR NANKI</span>
-            </div>
-
-            <div className="space-y-5 text-zinc-200 text-base md:text-lg leading-[1.8] font-light">
-              {siteContent.apologyLetter.paragraphs.map((p, idx) => (
-                <p
-                  key={idx}
-                  className={
-                    p === 'I cheated on you.'
-                      ? 'text-white font-semibold text-xl md:text-2xl py-2 border-l-2 border-[#f0b4df] pl-4'
-                      : idx === 0
-                      ? 'font-serif-italic text-2xl md:text-3xl text-[#f0b4df]'
-                      : ''
-                  }
-                >
-                  {p}
-                </p>
-              ))}
-            </div>
-
-            <div className="mt-10 pt-6 border-t border-white/10 flex items-center justify-between">
-              <span className="font-serif-italic text-2xl text-white">
+              <span className="font-mono-meta text-xs tracking-[0.14em] text-[#7C7080]">
                 {siteContent.apologyLetter.signoff}
               </span>
-              <span className="font-mono-label text-[11px] tracking-[0.18em] uppercase text-zinc-500">
-                Happy Birthday, {siteContent.herName}
-              </span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-white/10 pt-10 pb-4 px-4 md:px-10 overflow-hidden bg-[#070709]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 font-mono-label text-xs uppercase tracking-[0.18em] text-zinc-400 mb-6">
+      {/* CLEAN EDITORIAL FOOTER */}
+      <footer className="py-10 px-5 sm:px-8 bg-[#FCFBF9] border-t border-[#E6DCEB]">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 font-mono-meta text-[11px] tracking-[0.16em] uppercase text-[#7C7080]">
           <span>
-            For {siteContent.herName} &bull; {siteContent.birthdayDate}
+            For {siteContent.fullName} ({siteContent.nickname}) · {siteContent.birthdayDate}
           </span>
           <button
             type="button"
-            onClick={() => scrollTo('#top')}
-            className="hover:text-[#86efac] transition-colors"
+            onClick={() => scrollToSection('#top')}
+            className="text-[#514753] hover:underline underline-offset-4 cursor-pointer"
           >
             Back to top &uarr;
           </button>
         </div>
-
-        <div
-          className="w-full text-[16.4vw] leading-[0.84] font-bold tracking-[-0.04em] uppercase text-stroke-footer flex justify-between select-none"
-          aria-hidden="true"
-        >
-          {heroChars.map((ch, idx) => (
-            <span key={idx}>{ch}</span>
-          ))}
-        </div>
       </footer>
-
-      {/* Memory Detail Modal */}
-      {selectedMemory && (
-        <div
-          className="fixed inset-0 z-[75] bg-black/80 backdrop-blur-md flex items-center justify-center p-6"
-          onClick={() => setSelectedMemory(null)}
-        >
-          <div
-            className="max-w-lg w-full rounded-3xl bg-[#09090b] border border-white/15 p-8 relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setSelectedMemory(null)}
-              aria-label="Close memory"
-              className="absolute top-6 right-6 w-9 h-9 rounded-full border border-white/15 flex items-center justify-center text-zinc-400 hover:text-white"
-            >
-              <X size={16} />
-            </button>
-            <span className="font-mono-label text-xs tracking-[0.2em] text-[#f0b4df]">
-              {selectedMemory.counter}
-            </span>
-            <h3 className="text-3xl font-bold tracking-tight mt-3 mb-4">{selectedMemory.title}</h3>
-            <p className="text-zinc-300 leading-relaxed mb-6">{selectedMemory.description}</p>
-            <div className="h-56 rounded-2xl overflow-hidden">
-              <PhotoPlaceholder
-                src={selectedMemory.photo}
-                alt={selectedMemory.title}
-                slot={selectedMemory.photoSlot}
-                caption={selectedMemory.photoCaption}
-                className="rounded-2xl"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
