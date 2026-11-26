@@ -71,6 +71,30 @@
   animation: marqueeLeft 42s linear infinite;
 }
 
+/* Highlighted dark-lavender marquee shimmer */
+@keyframes lavenderGlow {
+  0%, 100% {
+    color: #6B587A;
+    text-shadow: 0 0 18px rgba(197, 182, 204, 0.45);
+  }
+  50% {
+    color: #514753;
+    text-shadow: 0 0 26px rgba(157, 141, 181, 0.65);
+  }
+}
+
+.marquee-dark-lavender {
+  animation: lavenderGlow 3.6s ease-in-out infinite;
+}
+
+.birthday-highlight-mark {
+  background: linear-gradient(120deg, rgba(230, 220, 235, 0.9) 0%, rgba(197, 182, 204, 0.55) 100%);
+  background-repeat: no-repeat;
+  background-size: 0% 42%;
+  background-position: 0 88%;
+  padding: 0 0.25em;
+}
+
 @keyframes kenBurnsGentle {
   0% { transform: scale(1) translate3d(0, 0, 0); }
   100% { transform: scale(1.06) translate3d(-1%, -0.8%, 0); }

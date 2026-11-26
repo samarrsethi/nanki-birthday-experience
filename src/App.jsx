@@ -289,6 +289,11 @@ export default function App() {
           { yPercent: 100, opacity: 0 },
           { yPercent: 0, opacity: 1, duration: 0.9, ease: 'power3.out' }
         )
+        .to(
+          '.birthday-highlight-mark',
+          { backgroundSize: '100% 42%', duration: 0.9, ease: 'power2.out' },
+          '-=0.35'
+        )
         .fromTo(
           '.finale-subtext',
           { y: 18, opacity: 0 },
@@ -748,10 +753,10 @@ export default function App() {
 
         <div className="relative z-10 max-w-5xl mx-auto">
           {/* Final Birthday Message */}
-          <div className="finale-message-block max-w-2xl mx-auto space-y-5">
+          <div className="finale-message-block max-w-3xl mx-auto space-y-5">
             <div className="overflow-hidden">
-              <h2 className="finale-heading font-editorial text-4xl sm:text-5xl md:text-6xl tracking-[-0.02em] text-[#514753] uppercase leading-tight">
-                HAPPY BIRTHDAY, HARSEERAT.
+              <h2 className="finale-heading font-editorial text-5xl sm:text-6xl md:text-7xl tracking-[-0.02em] text-[#514753] uppercase leading-tight">
+                <span className="birthday-highlight-mark">HAPPY BIRTHDAY, HARSEERAT.</span>
               </h2>
             </div>
 
@@ -775,6 +780,29 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      {/* DARK LAVENDER INFINITE MARQUEE ("i love you") */}
+      <div className="py-6 border-y border-[#C5B6CC]/60 bg-[#F4F0F5] overflow-hidden" aria-hidden="true">
+        <div className="animate-marquee-slow">
+          {[
+            'i love you, harseerat',
+            'i love you, nanki',
+            'happy birthday',
+            'always in my heart',
+            'i love you, harseerat',
+            'i love you, nanki',
+            'happy birthday',
+            'always in my heart',
+          ].map((phrase, idx) => (
+            <div key={idx} className="flex items-center gap-8 mx-4">
+              <span className="marquee-dark-lavender font-editorial-italic text-2xl sm:text-3xl tracking-wide">
+                {phrase}
+              </span>
+              <span className="text-[#8E7A9E] text-xs">&bull;</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* CLEAN EDITORIAL FOOTER */}
       <footer className="py-10 px-5 sm:px-8 bg-[#FCFBF9] border-t border-[#E6DCEB]">
