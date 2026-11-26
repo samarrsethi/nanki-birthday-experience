@@ -589,6 +589,36 @@ export default function App() {
         </div>
       </section>
 
+      {/* 06 / WARM CELEBRATORY FINALE */}
+      <section
+        id="finale"
+        className="py-28 md:py-36 px-5 sm:px-8 bg-[#FCFBF9] text-center"
+      >
+        <div className="max-w-2xl mx-auto space-y-6">
+          <h2 className="font-editorial-italic text-3xl sm:text-5xl text-[#514753] leading-tight">
+            happy birthday once again, nanki.
+          </h2>
+
+          <p className="text-base sm:text-lg text-[#7C7080] leading-relaxed max-w-xl mx-auto">
+            i hope this year brings you all the happiness, peace, laughter, and beautiful moments you deserve.
+          </p>
+
+          <figure className="pt-4 max-w-lg mx-auto">
+            <div className="aspect-[4/3] w-full overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/55 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.16)]">
+              <img
+                src="/photos/photo10.jpg"
+                alt="Happy birthday once again, Nanki"
+                loading="lazy"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <figcaption className="font-editorial-italic text-xl sm:text-2xl text-[#514753] mt-6">
+              made with love, for your special day.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
       {/* CLEAN EDITORIAL FOOTER */}
       <footer className="py-10 px-5 sm:px-8 bg-[#FCFBF9] border-t border-[#E6DCEB]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 font-mono-meta text-[11px] tracking-[0.16em] uppercase text-[#7C7080]">

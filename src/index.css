@@ -71,10 +71,6 @@
   animation: marqueeLeft 42s linear infinite;
 }
 
-.animate-marquee-slow:hover {
-  animation-play-state: paused;
-}
-
 @keyframes kenBurnsGentle {
   0% { transform: scale(1) translate3d(0, 0, 0); }
   100% { transform: scale(1.06) translate3d(-1%, -0.8%, 0); }
