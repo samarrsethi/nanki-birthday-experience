@@ -49,7 +49,16 @@ export default function App() {
 
     setTimeout(() => ScrollTrigger.refresh(), 120);
 
+    let resizeTimer = null;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => ScrollTrigger.refresh(), 180);
+    };
+    window.addEventListener('resize', onResize);
+
     return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', onResize);
       gsap.ticker.remove(tick);
       lenis.destroy();
       lenisRef.current = null;
