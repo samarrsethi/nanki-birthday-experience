@@ -224,6 +224,60 @@ export default function App() {
         }
       );
 
+      // 7. Finale Opening Choreography
+      const finaleTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#finale',
+          start: 'top 72%',
+          toggleActions: 'play none none reverse',
+        },
+      });
+
+      finaleTl
+        .fromTo(
+          '.finale-heading',
+          { yPercent: 100, opacity: 0 },
+          { yPercent: 0, opacity: 1, duration: 0.9, ease: 'power3.out' }
+        )
+        .fromTo(
+          '.finale-subtext',
+          { y: 20, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.75, ease: 'power2.out' },
+          '-=0.55'
+        )
+        .fromTo(
+          '.finale-photo-frame',
+          { clipPath: 'inset(10% 8% 10% 8%)', scale: 0.94, opacity: 0 },
+          {
+            clipPath: 'inset(0% 0% 0% 0%)',
+            scale: 1,
+            opacity: 1,
+            duration: 1.05,
+            ease: 'power3.out',
+          },
+          '-=0.5'
+        )
+        .fromTo(
+          '.finale-caption',
+          { y: 16, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' },
+          '-=0.45'
+        );
+
+      // Gentle floating celebratory specks in Finale
+      gsap.utils.toArray('.finale-speck').forEach((speck, i) => {
+        gsap.to(speck, {
+          y: -24 - (i % 3) * 12,
+          x: (i % 2 === 0 ? 1 : -1) * 14,
+          rotation: (i % 2 === 0 ? 1 : -1) * 25,
+          duration: 3 + (i % 3) * 0.8,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: i * 0.25,
+        });
+      });
+
       // 7. Active nav link tracking
       ['story', 'chapters', 'love-letter', 'apology'].forEach((id) => {
         const sec = document.getElementById(id);
@@ -592,19 +646,31 @@ export default function App() {
       {/* 06 / WARM CELEBRATORY FINALE */}
       <section
         id="finale"
-        className="py-28 md:py-36 px-5 sm:px-8 bg-[#FCFBF9] text-center"
+        className="relative py-28 md:py-36 px-5 sm:px-8 bg-[#FCFBF9] text-center overflow-hidden"
       >
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="font-editorial-italic text-3xl sm:text-5xl text-[#514753] leading-tight">
-            happy birthday once again, nanki.
-          </h2>
+        {/* Subtle floating lilac & plum celebratory specks */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <span className="finale-speck absolute top-[18%] left-[14%] w-2 h-2 rounded-full bg-[#C5B6CC]/55" />
+          <span className="finale-speck absolute top-[26%] right-[16%] w-2.5 h-2.5 rounded-full bg-[#E6DCEB]" />
+          <span className="finale-speck absolute top-[54%] left-[10%] w-1.5 h-1.5 rounded-full bg-[#514753]/25" />
+          <span className="finale-speck absolute top-[62%] right-[12%] w-2 h-2 rounded-full bg-[#C5B6CC]/50" />
+          <span className="finale-speck absolute bottom-[18%] left-[22%] w-2 h-2 rounded-full bg-[#E6DCEB]" />
+          <span className="finale-speck absolute bottom-[22%] right-[24%] w-1.5 h-1.5 rounded-full bg-[#C5B6CC]/60" />
+        </div>
 
-          <p className="text-base sm:text-lg text-[#7C7080] leading-relaxed max-w-xl mx-auto">
+        <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+          <div className="overflow-hidden">
+            <h2 className="finale-heading font-editorial-italic text-3xl sm:text-5xl text-[#514753] leading-tight">
+              happy birthday once again, nanki.
+            </h2>
+          </div>
+
+          <p className="finale-subtext text-base sm:text-lg text-[#7C7080] leading-relaxed max-w-xl mx-auto">
             i hope this year brings you all the happiness, peace, laughter, and beautiful moments you deserve.
           </p>
 
           <figure className="pt-4 max-w-lg mx-auto">
-            <div className="aspect-[4/3] w-full overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/55 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.16)]">
+            <div className="finale-photo-frame aspect-[4/3] w-full overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/55 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.16)]">
               <img
                 src="/photos/photo10.jpg"
                 alt="Happy birthday once again, Nanki"
@@ -612,7 +678,7 @@ export default function App() {
                 className="w-full h-full object-cover object-top"
               />
             </div>
-            <figcaption className="font-editorial-italic text-xl sm:text-2xl text-[#514753] mt-6">
+            <figcaption className="finale-caption font-editorial-italic text-xl sm:text-2xl text-[#514753] mt-6">
               made with love, for your special day.
             </figcaption>
           </figure>
