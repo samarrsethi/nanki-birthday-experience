@@ -16,6 +16,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function App() {
   const [introDone, setIntroDone] = useState(false);
+  const [introKey, setIntroKey] = useState(0);
   const [soundOn, setSoundOn] = useState(false);
   const [activeNav, setActiveNav] = useState('story');
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -224,11 +225,90 @@ export default function App() {
         }
       );
 
-      // 7. Finale Opening Choreography
+      // 7. Part 10: Gentle Return background transition (#E1DAE6 -> #FCFBF9) + scroll-illuminated words
+      gsap.fromTo(
+        '#gentle-return',
+        { backgroundColor: '#E1DAE6' },
+        {
+          backgroundColor: '#FCFBF9',
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '#gentle-return',
+            start: 'top 80%',
+            end: 'bottom 55%',
+            scrub: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        '.return-word',
+        { color: '#BEB2C4' },
+        {
+          color: '#514753',
+          stagger: 0.03,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '#gentle-return',
+            start: 'top 68%',
+            end: 'bottom 68%',
+            scrub: 0.7,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        '.return-photo',
+        { y: 30, opacity: 0.35, scale: 0.95 },
+        {
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.return-photo',
+            start: 'top 85%',
+            end: 'top 42%',
+            scrub: 0.8,
+          },
+        }
+      );
+
+      // 8. Part 11: Final Gathering Editorial Collage + Finale Typography
+      gsap.utils.toArray('.finale-gather-item').forEach((item, i) => {
+        const offsets = [
+          { x: -110, y: -50, rot: -10 },
+          { x: 0, y: -70, rot: 6 },
+          { x: 110, y: -40, rot: 10 },
+          { x: -90, y: 60, rot: -8 },
+          { x: 20, y: 80, rot: 5 },
+          { x: 100, y: 55, rot: 9 },
+        ];
+        const o = offsets[i % offsets.length];
+        gsap.fromTo(
+          item,
+          { x: o.x, y: o.y, rotation: o.rot, opacity: 0.15, scale: 0.88 },
+          {
+            x: 0,
+            y: 0,
+            rotation: (i % 2 === 0 ? -1 : 1) * 1.2,
+            opacity: 1,
+            scale: 1,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: '.finale-collage-grid',
+              start: 'top 82%',
+              end: 'center 48%',
+              scrub: 1,
+            },
+          }
+        );
+      });
+
       const finaleTl = gsap.timeline({
         scrollTrigger: {
-          trigger: '#finale',
-          start: 'top 72%',
+          trigger: '.finale-message-block',
+          start: 'top 78%',
           toggleActions: 'play none none reverse',
         },
       });
@@ -241,27 +321,15 @@ export default function App() {
         )
         .fromTo(
           '.finale-subtext',
-          { y: 20, opacity: 0 },
+          { y: 18, opacity: 0 },
           { y: 0, opacity: 1, duration: 0.75, ease: 'power2.out' },
-          '-=0.55'
-        )
-        .fromTo(
-          '.finale-photo-frame',
-          { clipPath: 'inset(10% 8% 10% 8%)', scale: 0.94, opacity: 0 },
-          {
-            clipPath: 'inset(0% 0% 0% 0%)',
-            scale: 1,
-            opacity: 1,
-            duration: 1.05,
-            ease: 'power3.out',
-          },
           '-=0.5'
         )
         .fromTo(
           '.finale-caption',
-          { y: 16, opacity: 0 },
+          { y: 14, opacity: 0 },
           { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' },
-          '-=0.45'
+          '-=0.4'
         );
 
       // Gentle floating celebratory specks in Finale
@@ -315,7 +383,15 @@ export default function App() {
     }
   };
 
+  const handleReplayFilm = () => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    setIntroKey((k) => k + 1);
+    setIntroDone(false);
+  };
+
   const storyWords = siteContent.illuminatedStory.text.split(' ');
+  const returnWordsLine1 = 'the past is something i have to take responsibility for.'.split(' ');
+  const returnWordsLine2 = 'but today, i simply want to wish you happiness.'.split(' ');
 
   return (
     <div ref={mainRef} className="relative bg-[#FCFBF9] text-[#514753] min-h-screen">
@@ -328,6 +404,7 @@ export default function App() {
       {/* Priority 2: 15–20s Cinematic Introduction */}
       {!introDone && (
         <PreloaderIntro
+          key={introKey}
           reducedMotion={reducedMotion}
           onSoundChoice={(enabled) => setSoundOn(enabled)}
           onComplete={() => setIntroDone(true)}
@@ -643,45 +720,115 @@ export default function App() {
         </div>
       </section>
 
-      {/* 06 / WARM CELEBRATORY FINALE */}
+      {/* PART 10 — A GENTLE RETURN TO HER BIRTHDAY */}
       <section
-        id="finale"
-        className="relative py-28 md:py-36 px-5 sm:px-8 bg-[#FCFBF9] text-center overflow-hidden"
+        id="gentle-return"
+        className="py-28 md:py-36 px-5 sm:px-8 bg-[#E1DAE6]"
       >
-        {/* Subtle floating lilac & plum celebratory specks */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <span className="finale-speck absolute top-[18%] left-[14%] w-2 h-2 rounded-full bg-[#C5B6CC]/55" />
-          <span className="finale-speck absolute top-[26%] right-[16%] w-2.5 h-2.5 rounded-full bg-[#E6DCEB]" />
-          <span className="finale-speck absolute top-[54%] left-[10%] w-1.5 h-1.5 rounded-full bg-[#514753]/25" />
-          <span className="finale-speck absolute top-[62%] right-[12%] w-2 h-2 rounded-full bg-[#C5B6CC]/50" />
-          <span className="finale-speck absolute bottom-[18%] left-[22%] w-2 h-2 rounded-full bg-[#E6DCEB]" />
-          <span className="finale-speck absolute bottom-[22%] right-[24%] w-1.5 h-1.5 rounded-full bg-[#C5B6CC]/60" />
-        </div>
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
+          <div className="space-y-6">
+            <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
+              06 / TODAY
+            </span>
 
-        <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-          <div className="overflow-hidden">
-            <h2 className="finale-heading font-editorial-italic text-3xl sm:text-5xl text-[#514753] leading-tight">
-              happy birthday once again, nanki.
-            </h2>
+            <p className="font-editorial text-[clamp(1.65rem,3vw,2.5rem)] leading-[1.35]">
+              {returnWordsLine1.map((w, i) => (
+                <span key={i} className="return-word inline-block mr-[0.26em] text-[#BEB2C4]">
+                  {w}
+                </span>
+              ))}
+            </p>
+
+            <p className="font-editorial-italic text-[clamp(1.65rem,3vw,2.5rem)] leading-[1.35]">
+              {returnWordsLine2.map((w, i) => (
+                <span key={i} className="return-word inline-block mr-[0.26em] text-[#BEB2C4]">
+                  {w}
+                </span>
+              ))}
+            </p>
           </div>
 
-          <p className="finale-subtext text-base sm:text-lg text-[#7C7080] leading-relaxed max-w-xl mx-auto">
-            i hope this year brings you all the happiness, peace, laughter, and beautiful moments you deserve.
-          </p>
-
-          <figure className="pt-4 max-w-lg mx-auto">
-            <div className="finale-photo-frame aspect-[4/3] w-full overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/55 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.16)]">
+          <figure className="return-photo max-w-md w-full mx-auto">
+            <div className="aspect-[4/3] w-full overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/55 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.14)]">
               <img
                 src="/photos/photo10.jpg"
-                alt="Happy birthday once again, Nanki"
+                alt="Wishing you happiness today"
                 loading="lazy"
                 className="w-full h-full object-cover object-top"
               />
             </div>
-            <figcaption className="finale-caption font-editorial-italic text-xl sm:text-2xl text-[#514753] mt-6">
-              made with love, for your special day.
-            </figcaption>
           </figure>
+        </div>
+      </section>
+
+      {/* PART 11 — FINAL BIRTHDAY ENDING (GATHERING COLLAGE + REPLAY) */}
+      <section
+        id="finale"
+        className="relative py-28 md:py-40 px-5 sm:px-8 bg-[#FCFBF9] text-center overflow-hidden"
+      >
+        {/* Subtle floating lilac & plum celebratory specks */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <span className="finale-speck absolute top-[14%] left-[12%] w-2 h-2 rounded-full bg-[#C5B6CC]/55" />
+          <span className="finale-speck absolute top-[22%] right-[14%] w-2.5 h-2.5 rounded-full bg-[#E6DCEB]" />
+          <span className="finale-speck absolute top-[54%] left-[8%] w-1.5 h-1.5 rounded-full bg-[#514753]/25" />
+          <span className="finale-speck absolute top-[62%] right-[10%] w-2 h-2 rounded-full bg-[#C5B6CC]/50" />
+          <span className="finale-speck absolute bottom-[16%] left-[20%] w-2 h-2 rounded-full bg-[#E6DCEB]" />
+          <span className="finale-speck absolute bottom-[20%] right-[22%] w-1.5 h-1.5 rounded-full bg-[#C5B6CC]/60" />
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto">
+          {/* Editorial Gathering Photo Collage */}
+          <div className="finale-collage-grid grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-20 md:mb-24 items-center">
+            {[
+              { src: '/photos/photo1.jpg', ratio: 'aspect-[9/16]' },
+              { src: '/photos/photo3.jpg', ratio: 'aspect-[3/4]' },
+              { src: '/photos/photo7.jpg', ratio: 'aspect-[4/3]' },
+              { src: '/photos/photo4.jpg', ratio: 'aspect-[3/4]' },
+              { src: '/photos/photo6.jpg', ratio: 'aspect-[4/3]' },
+              { src: '/photos/photo8.jpg', ratio: 'aspect-[3/4]' },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="finale-gather-item bg-[#FFFFFF] p-2 border border-[#C5B6CC]/50 shadow-[0_14px_34px_-12px_rgba(81,71,83,0.14)]"
+              >
+                <div className={`${item.ratio} w-full overflow-hidden bg-[#E6DCEB]`}>
+                  <img
+                    src={item.src}
+                    alt={`Memory ${idx + 1}`}
+                    loading="lazy"
+                    className="w-full h-full object-cover object-top"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Final Birthday Message */}
+          <div className="finale-message-block max-w-2xl mx-auto space-y-5">
+            <div className="overflow-hidden">
+              <h2 className="finale-heading font-editorial text-4xl sm:text-5xl md:text-6xl tracking-[-0.02em] text-[#514753] uppercase leading-tight">
+                HAPPY BIRTHDAY, HARSEERAT.
+              </h2>
+            </div>
+
+            <p className="finale-subtext text-base sm:text-lg text-[#7C7080] leading-relaxed max-w-xl mx-auto">
+              i hope this year brings you peace, happiness, and everything good you deserve.
+            </p>
+
+            <p className="finale-caption font-editorial-italic text-2xl sm:text-3xl text-[#514753] pt-2">
+              thank you for the memories, nanki.
+            </p>
+
+            <div className="pt-8">
+              <button
+                type="button"
+                onClick={handleReplayFilm}
+                className="px-7 py-3 border border-[#C5B6CC] bg-[#F4F0F5] text-[#514753] font-mono-meta text-[11px] tracking-[0.16em] uppercase hover:bg-[#E6DCEB] transition-colors cursor-pointer"
+              >
+                watch our little film again
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
