@@ -7,17 +7,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 /**
  * LoveLetterEnvelope — Priority 4
- * Physically convincing envelope and full-page paper extraction:
- * - While sealed, the paper is cleanly tucked inside the envelope (never protruding out sides/bottom)
- * - Flap opens upward with generous clearance below the section heading
- * - Paper rises UP out of the pocket, switches z-index to 30 ABOVE the envelope, and expands cleanly
- * - Opening lines illuminate to full opacity before the pin releases into the natural continuation
+ * - Envelope opens cleanly
+ * - Paper pops out ABOVE the envelope
+ * - Envelope card completely disappears (opacity: 0) so the letter is 100% clear and unobstructed
+ * - All letter lines are crisp and legible, releasing seamlessly to scroll the rest of the letter
  */
 export default function LoveLetterEnvelope({ reducedMotion = false }) {
   const pinSectionRef = useRef(null);
-  const envelopeRef = useRef(null);
+  const envelopeShellRef = useRef(null);
   const flapRef = useRef(null);
-  const pocketRef = useRef(null);
   const paperRef = useRef(null);
   const sealRef = useRef(null);
   const lineRefs = useRef([]);
@@ -33,28 +31,28 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
         scrollTrigger: {
           trigger: pinSectionRef.current,
           start: 'top top',
-          end: '+=190%',
+          end: '+=170%',
           pin: true,
-          scrub: 0.9,
+          scrub: 0.85,
           anticipatePin: 1,
         },
       });
 
       // 0.0 -> 0.16: Envelope enters cleanly
       tl.fromTo(
-        envelopeRef.current,
-        { y: 36, opacity: 0.6, scale: 0.96 },
+        envelopeShellRef.current,
+        { y: 30, opacity: 0.7, scale: 0.96 },
         { y: 0, opacity: 1, scale: 1, duration: 0.16, ease: 'power2.out' },
         0
       );
 
-      // 0.12 -> 0.32: Seal fades & flap opens in 3D
+      // 0.12 -> 0.30: Seal fades & flap flips open
       tl.to(sealRef.current, { opacity: 0, scale: 0.7, duration: 0.1 }, 0.12);
       tl.to(
         flapRef.current,
         {
           rotateX: -180,
-          duration: 0.22,
+          duration: 0.2,
           ease: 'power2.inOut',
           onUpdate: function () {
             if (flapRef.current) {
@@ -65,13 +63,13 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
         0.14
       );
 
-      // 0.32 -> 0.56: Paper slides UP out of the envelope pocket (clipped cleanly inside until it emerges)
+      // 0.30 -> 0.54: Letter pops UP out of the envelope & rises ABOVE everything (zIndex: 35)
       tl.fromTo(
         paperRef.current,
-        { y: 16, scale: 0.78, opacity: 0 },
+        { y: 20, scale: 0.78, opacity: 0 },
         {
-          y: -155,
-          scale: 0.9,
+          y: -120,
+          scale: 0.94,
           opacity: 1,
           duration: 0.24,
           ease: 'power2.out',
@@ -79,16 +77,28 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
             if (paperRef.current) paperRef.current.style.zIndex = '6';
           },
           onComplete: () => {
-            if (paperRef.current) paperRef.current.style.zIndex = '30';
+            if (paperRef.current) paperRef.current.style.zIndex = '35';
           },
           onReverseComplete: () => {
             if (paperRef.current) paperRef.current.style.zIndex = '6';
           },
         },
-        0.32
+        0.3
       );
 
-      // 0.56 -> 0.78: Paper rises ABOVE the envelope & settles centered while envelope recedes
+      // 0.52 -> 0.72: Envelope card completely disappears while paper settles cleanly in center
+      tl.to(
+        envelopeShellRef.current,
+        {
+          opacity: 0,
+          scale: 0.84,
+          y: 110,
+          duration: 0.2,
+          ease: 'power2.inOut',
+        },
+        0.52
+      );
+
       tl.to(
         paperRef.current,
         {
@@ -97,43 +107,31 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
           duration: 0.22,
           ease: 'power3.out',
           onStart: () => {
-            if (paperRef.current) paperRef.current.style.zIndex = '30';
+            if (paperRef.current) paperRef.current.style.zIndex = '35';
           },
         },
-        0.56
+        0.54
       );
 
-      tl.to(
-        [envelopeRef.current, pocketRef.current],
-        {
-          y: 120,
-          opacity: 0.14,
-          scale: 0.88,
-          duration: 0.22,
-          ease: 'power2.inOut',
-        },
-        0.56
-      );
-
-      // 0.66 -> 0.88: Opening lines illuminate to full opacity BEFORE pin releases at 1.0
+      // 0.62 -> 0.84: All opening lines illuminate to 100% crisp opacity
       const lines = lineRefs.current.filter(Boolean);
       if (lines.length > 0) {
         tl.fromTo(
           lines,
-          { opacity: 0.25, y: 10 },
+          { opacity: 0.3, y: 8 },
           {
             opacity: 1,
             y: 0,
-            stagger: 0.06,
-            duration: 0.2,
+            stagger: 0.05,
+            duration: 0.18,
             ease: 'power2.out',
           },
-          0.66
+          0.62
         );
       }
 
-      // Hold clean full-opacity state from 0.88 -> 1.0
-      tl.to({}, { duration: 0.12 }, 0.88);
+      // Hold clear full-opacity letter from 0.84 -> 1.0
+      tl.to({}, { duration: 0.16 }, 0.84);
     }, pinSectionRef);
 
     return () => ctx.revert();
@@ -146,7 +144,6 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
         ref={pinSectionRef}
         className="relative min-h-[100svh] w-full flex flex-col items-center justify-center px-5 py-20 overflow-hidden"
       >
-        {/* Overhead Eyebrow with generous clearance for open flap */}
         <div className="text-center mb-16 sm:mb-20 md:mb-24 space-y-2 relative z-40">
           <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
             {eyebrow}
@@ -158,49 +155,45 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
 
         {/* 3D Perspective Stage */}
         <div className="relative w-full max-w-2xl h-[360px] sm:h-[400px] md:h-[420px] flex items-center justify-center envelope-perspective">
-          {/* Envelope Assembly */}
+          {/* Emerging Paper Sheet (independent sibling so envelope can completely disappear!) */}
           <div
-            ref={envelopeRef}
-            className="relative w-[300px] sm:w-[400px] md:w-[460px] h-[195px] sm:h-[245px] md:h-[275px] preserve-3d"
+            ref={paperRef}
+            style={{ zIndex: reducedMotion ? 35 : 6 }}
+            className="absolute left-1/2 -translate-x-1/2 w-[290px] sm:w-[440px] md:w-[540px] bg-[#FCFBF9] border border-[#C5B6CC]/65 p-6 sm:p-9 md:p-11 shadow-[0_24px_60px_-12px_rgba(81,71,83,0.16)]"
           >
-            {/* Layer 1: Envelope Back */}
+            <p
+              ref={(el) => (lineRefs.current[0] = el)}
+              className="font-editorial-italic text-2xl sm:text-3xl text-[#514753] mb-4"
+            >
+              {salutation}
+            </p>
+
+            <div className="space-y-3.5">
+              {openingLines.map((line, idx) => (
+                <p
+                  key={idx}
+                  ref={(el) => (lineRefs.current[idx + 1] = el)}
+                  className="text-sm sm:text-base md:text-[17px] leading-[1.75] text-[#514753]"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Envelope Card Assembly (disappears completely once paper pops out) */}
+          <div
+            ref={envelopeShellRef}
+            className="relative w-[300px] sm:w-[400px] md:w-[460px] h-[195px] sm:h-[245px] md:h-[275px] preserve-3d pointer-events-none"
+          >
+            {/* Envelope Back */}
             <div
               className="absolute inset-0 bg-[#E6DCEB] border border-[#C5B6CC]/70 shadow-[0_20px_50px_rgba(81,71,83,0.12)]"
               style={{ zIndex: 1 }}
             />
 
-            {/* Layer 2/3: Emerging Paper Sheet (fits cleanly inside envelope width until scaled, rises ABOVE to z-30) */}
-            <div
-              ref={paperRef}
-              style={{ zIndex: reducedMotion ? 30 : 6 }}
-              className="absolute left-1/2 -translate-x-1/2 -top-6 w-[280px] sm:w-[380px] md:w-[540px] bg-[#FCFBF9] border border-[#C5B6CC]/60 p-6 sm:p-9 md:p-11 shadow-[0_24px_60px_-12px_rgba(81,71,83,0.18)]"
-            >
-              <p
-                ref={(el) => (lineRefs.current[0] = el)}
-                className="font-editorial-italic text-2xl sm:text-3xl text-[#514753] mb-4"
-              >
-                {salutation}
-              </p>
-
-              <div className="space-y-3.5">
-                {openingLines.map((line, idx) => (
-                  <p
-                    key={idx}
-                    ref={(el) => (lineRefs.current[idx + 1] = el)}
-                    className="text-sm sm:text-base md:text-[17px] leading-[1.75] text-[#514753]"
-                  >
-                    {line}
-                  </p>
-                ))}
-              </div>
-            </div>
-
-            {/* Layer 3: Envelope Front Pocket */}
-            <div
-              ref={pocketRef}
-              style={{ zIndex: 10 }}
-              className="absolute inset-0 pointer-events-none overflow-hidden"
-            >
+            {/* Envelope Front Pocket */}
+            <div style={{ zIndex: 10 }} className="absolute inset-0 overflow-hidden">
               <div
                 className="absolute inset-0 bg-[#EFE9F3] border-t border-[#C5B6CC]/50"
                 style={{
@@ -215,14 +208,14 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
               />
             </div>
 
-            {/* Layer 4: Envelope Top Flap */}
+            {/* Envelope Top Flap */}
             <div
               ref={flapRef}
               style={{
                 zIndex: 15,
                 transformOrigin: 'top center',
               }}
-              className="absolute top-0 left-0 right-0 h-[56%] preserve-3d pointer-events-none"
+              className="absolute top-0 left-0 right-0 h-[56%] preserve-3d"
             >
               <div
                 className="w-full h-full bg-[#ECE4F1] border-b border-[#C5B6CC]/60 shadow-sm"
@@ -236,7 +229,7 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
             <div
               ref={sealRef}
               style={{ zIndex: 18 }}
-              className="absolute left-1/2 top-[53%] -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#C5B6CC] border border-[#FCFBF9] shadow-md flex items-center justify-center pointer-events-none"
+              className="absolute left-1/2 top-[53%] -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#C5B6CC] border border-[#FCFBF9] shadow-md flex items-center justify-center"
             >
               <span className="font-editorial-italic text-sm text-[#FCFBF9]">n</span>
             </div>
@@ -244,9 +237,9 @@ export default function LoveLetterEnvelope({ reducedMotion = false }) {
         </div>
       </div>
 
-      {/* Natural Scroll Continuation (clean spacing below pinned stage, zero overlap) */}
+      {/* Natural Scroll Continuation */}
       <div className="relative z-20 max-w-[540px] mx-auto px-5 pb-28 pt-4">
-        <div className="bg-[#FCFBF9] border border-[#C5B6CC]/60 p-6 sm:p-9 md:p-11 shadow-[0_24px_60px_-12px_rgba(81,71,83,0.12)] space-y-5">
+        <div className="bg-[#FCFBF9] border border-[#C5B6CC]/65 p-6 sm:p-9 md:p-11 shadow-[0_24px_60px_-12px_rgba(81,71,83,0.12)] space-y-5">
           {remainingParagraphs.map((para, idx) => (
             <p
               key={idx}

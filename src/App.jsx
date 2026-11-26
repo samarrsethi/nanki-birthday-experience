@@ -9,6 +9,7 @@ import { ambientAudio } from './utils/ambientAudio';
 import PreloaderIntro from './components/PreloaderIntro';
 import LoveLetterEnvelope from './components/LoveLetterEnvelope';
 import HeartSnakeCursor from './components/HeartSnakeCursor';
+import ScatteredCollage from './components/ScatteredCollage';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -500,6 +501,9 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      {/* 02B / OUR LITTLE WORLD — SCATTERED-TO-JOINED PHOTO COLLAGE */}
+      <ScatteredCollage reducedMotion={reducedMotion} />
 
       {/* 03 / A LOVE LETTER — ENVELOPE + PAPER EXTRACTION ABOVE ENVELOPE (Priority 4) */}
       <LoveLetterEnvelope reducedMotion={reducedMotion} />
