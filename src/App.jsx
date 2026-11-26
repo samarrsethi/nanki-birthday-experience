@@ -274,37 +274,7 @@ export default function App() {
         }
       );
 
-      // 8. Part 11: Final Gathering Editorial Collage + Finale Typography
-      gsap.utils.toArray('.finale-gather-item').forEach((item, i) => {
-        const offsets = [
-          { x: -110, y: -50, rot: -10 },
-          { x: 0, y: -70, rot: 6 },
-          { x: 110, y: -40, rot: 10 },
-          { x: -90, y: 60, rot: -8 },
-          { x: 20, y: 80, rot: 5 },
-          { x: 100, y: 55, rot: 9 },
-        ];
-        const o = offsets[i % offsets.length];
-        gsap.fromTo(
-          item,
-          { x: o.x, y: o.y, rotation: o.rot, opacity: 0.15, scale: 0.88 },
-          {
-            x: 0,
-            y: 0,
-            rotation: (i % 2 === 0 ? -1 : 1) * 1.2,
-            opacity: 1,
-            scale: 1,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: '.finale-collage-grid',
-              start: 'top 82%',
-              end: 'center 48%',
-              scrub: 1,
-            },
-          }
-        );
-      });
-
+      // 8. Part 11: Finale Typography Choreography
       const finaleTl = gsap.timeline({
         scrollTrigger: {
           trigger: '.finale-message-block',
@@ -777,32 +747,6 @@ export default function App() {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto">
-          {/* Editorial Gathering Photo Collage */}
-          <div className="finale-collage-grid grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-20 md:mb-24 items-center">
-            {[
-              { src: '/photos/photo1.jpg', ratio: 'aspect-[9/16]' },
-              { src: '/photos/photo3.jpg', ratio: 'aspect-[3/4]' },
-              { src: '/photos/photo7.jpg', ratio: 'aspect-[4/3]' },
-              { src: '/photos/photo4.jpg', ratio: 'aspect-[3/4]' },
-              { src: '/photos/photo6.jpg', ratio: 'aspect-[4/3]' },
-              { src: '/photos/photo8.jpg', ratio: 'aspect-[3/4]' },
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className="finale-gather-item bg-[#FFFFFF] p-2 border border-[#C5B6CC]/50 shadow-[0_14px_34px_-12px_rgba(81,71,83,0.14)]"
-              >
-                <div className={`${item.ratio} w-full overflow-hidden bg-[#E6DCEB]`}>
-                  <img
-                    src={item.src}
-                    alt={`Memory ${idx + 1}`}
-                    loading="lazy"
-                    className="w-full h-full object-cover object-top"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Final Birthday Message */}
           <div className="finale-message-block max-w-2xl mx-auto space-y-5">
             <div className="overflow-hidden">
