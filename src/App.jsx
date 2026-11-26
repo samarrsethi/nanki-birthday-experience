@@ -8,6 +8,7 @@ import { siteContent } from './data/content';
 import { ambientAudio } from './utils/ambientAudio';
 import PreloaderIntro from './components/PreloaderIntro';
 import LoveLetterEnvelope from './components/LoveLetterEnvelope';
+import HeartSnakeCursor from './components/HeartSnakeCursor';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -262,6 +263,9 @@ export default function App() {
 
   return (
     <div ref={mainRef} className="relative bg-[#FCFBF9] text-[#514753] min-h-screen">
+      {/* Heart Cursor & Snake Scroll Trail */}
+      <HeartSnakeCursor />
+
       {/* Subtle Paper Grain */}
       <div className="paper-grain" aria-hidden="true" />
 

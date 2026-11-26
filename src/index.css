@@ -88,3 +88,13 @@
 .preserve-3d {
   transform-style: preserve-3d;
 }
+
+/* Hide default arrow cursor when HeartSnakeCursor is active on desktop */
+@media (pointer: fine) {
+  html.hide-default-cursor,
+  html.hide-default-cursor *,
+  body.hide-default-cursor,
+  body.hide-default-cursor * {
+    cursor: none !important;
+  }
+}
