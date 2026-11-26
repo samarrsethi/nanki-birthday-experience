@@ -41,9 +41,9 @@ export default function ParticleContact({ text = "i'm sorry, nanki.", onParticle
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const fontSize = Math.max(26, Math.min(72, Math.floor(width / (text.length * 0.54))));
-      ctx.font = `italic 400 ${fontSize}px "Instrument Serif", Georgia, serif`;
-      ctx.fillStyle = '#c4b5fd';
+      const fontSize = Math.max(24, Math.min(64, Math.floor(width / (text.length * 0.52))));
+      ctx.font = `italic 500 ${fontSize}px "Cormorant Garamond", Georgia, serif`;
+      ctx.fillStyle = '#514753';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, width / 2, height / 2);
@@ -147,7 +147,7 @@ export default function ParticleContact({ text = "i'm sorry, nanki.", onParticle
         p.x += p.vx;
         p.y += p.vy;
 
-        ctx.fillStyle = p.ox % 2 === 0 ? '#c4b5fd' : '#86efac';
+        ctx.fillStyle = p.ox % 2 === 0 ? '#514753' : '#7C7080';
         ctx.globalAlpha = p.alpha;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -181,8 +181,8 @@ export default function ParticleContact({ text = "i'm sorry, nanki.", onParticle
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
       </div>
-      <span className="font-mono-label text-[11px] tracking-[0.2em] uppercase text-zinc-500 mt-1">
-        {clickedOnce ? 'scattered — click below to read my letter' : 'hover to scatter · click to burst'}
+      <span className="font-mono-meta text-[10px] tracking-[0.2em] uppercase text-[#7C7080] mt-1">
+        {clickedOnce ? 'scattered — thank you for reading' : 'hover to scatter · click to burst'}
       </span>
     </div>
   );

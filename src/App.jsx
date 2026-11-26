@@ -10,6 +10,7 @@ import PreloaderIntro from './components/PreloaderIntro';
 import LoveLetterEnvelope from './components/LoveLetterEnvelope';
 import HeartSnakeCursor from './components/HeartSnakeCursor';
 import ScatteredCollage from './components/ScatteredCollage';
+import ParticleContact from './components/ParticleContact';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -543,8 +544,8 @@ export default function App() {
 
       {/* 05 / A SINCERE APOLOGY — MUTED GREY-LILAC TRANSITION (Priority 6) */}
       <section id="apology" className="py-28 md:py-40 px-5 sm:px-8 bg-[#F4F0F5]">
-        <div className="max-w-2xl mx-auto">
-          <div className="space-y-3 mb-12">
+        <div className="max-w-3xl mx-auto">
+          <div className="space-y-3 mb-8 text-center">
             <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
               {siteContent.apologyLetter.eyebrow}
             </span>
@@ -553,7 +554,12 @@ export default function App() {
             </h2>
           </div>
 
-          <div className="bg-[#FCFBF9]/90 border border-[#C5B6CC]/70 p-7 sm:p-12 space-y-5 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.1)]">
+          {/* Interactive Dot-Particle Centerpiece ("i am sorry, harseerat.") */}
+          <div className="mb-12">
+            <ParticleContact text="i am sorry, harseerat." />
+          </div>
+
+          <div className="max-w-2xl mx-auto bg-[#FCFBF9]/90 border border-[#C5B6CC]/70 p-7 sm:p-12 space-y-5 shadow-[0_20px_50px_-15px_rgba(81,71,83,0.1)]">
             <p className="font-editorial-italic text-2xl sm:text-3xl text-[#514753]">
               {siteContent.apologyLetter.salutation}
             </p>
