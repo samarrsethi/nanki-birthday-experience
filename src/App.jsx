@@ -11,6 +11,7 @@ import LoveLetterEnvelope from './components/LoveLetterEnvelope';
 import HeartSnakeCursor from './components/HeartSnakeCursor';
 import ScatteredCollage from './components/ScatteredCollage';
 import ParticleContact from './components/ParticleContact';
+import ContinuousChapters from './components/ContinuousChapters';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -94,15 +95,16 @@ export default function App() {
         );
       }
 
-      // 2. Hero subtle entrance + parallax
+      // 2. Hero continuous exit: heading moves upward while portrait scales & drifts smoothly into next scene
       gsap.fromTo(
         '.hero-stagger',
         { y: 22, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.85, stagger: 0.1, ease: 'power3.out' }
       );
 
-      gsap.to('.hero-photo-parallax', {
-        y: 36,
+      gsap.to('.hero-text-exit', {
+        y: -55,
+        opacity: 0.25,
         ease: 'none',
         scrollTrigger: {
           trigger: '#top',
@@ -112,7 +114,19 @@ export default function App() {
         },
       });
 
-      // 3. Priority 3: Scroll-Illuminated Text (#BEB2C4 -> #514753) + coordinated photos
+      gsap.to('.hero-photo-parallax', {
+        y: 65,
+        scale: 0.88,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '#top',
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+      });
+
+      // 3. Priority 3: Scroll-Illuminated Text (#BEB2C4 -> #514753) + two photographs overlap & separate
       gsap.fromTo(
         '.illum-word',
         { color: '#BEB2C4' },
@@ -129,66 +143,45 @@ export default function App() {
         }
       );
 
-      gsap.utils.toArray('.illum-photo').forEach((el, i) => {
+      const storyPhotos = gsap.utils.toArray('.illum-photo');
+      if (storyPhotos[0]) {
         gsap.fromTo(
-          el,
-          { y: i % 2 === 0 ? 35 : 55, opacity: 0.4, scale: 0.96 },
+          storyPhotos[0],
+          { xPercent: 22, y: 30, rotation: -4, scale: 0.92 },
           {
+            xPercent: 0,
             y: 0,
-            opacity: 1,
+            rotation: 0,
             scale: 1,
             ease: 'none',
             scrollTrigger: {
-              trigger: el,
-              start: 'top 88%',
-              end: 'top 45%',
-              scrub: 0.8,
+              trigger: '#story',
+              start: 'top 75%',
+              end: 'bottom 60%',
+              scrub: 0.9,
             },
           }
         );
-      });
-
-      // 4. Priority 5: Numbered Photographic Chapters scrubbed transitions
-      gsap.utils.toArray('.chapter-row').forEach((row) => {
-        const img = row.querySelector('.chapter-img');
-        const text = row.querySelector('.chapter-text');
-
-        if (img) {
-          gsap.fromTo(
-            img,
-            { scale: 1.08, y: 24 },
-            {
-              scale: 1,
-              y: 0,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: row,
-                start: 'top 88%',
-                end: 'top 35%',
-                scrub: 0.9,
-              },
-            }
-          );
-        }
-
-        if (text) {
-          gsap.fromTo(
-            text,
-            { y: 28, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.8,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: row,
-                start: 'top 78%',
-                toggleActions: 'play none none reverse',
-              },
-            }
-          );
-        }
-      });
+      }
+      if (storyPhotos[1]) {
+        gsap.fromTo(
+          storyPhotos[1],
+          { xPercent: -22, y: 50, rotation: 5, scale: 0.9 },
+          {
+            xPercent: 0,
+            y: 0,
+            rotation: 0,
+            scale: 1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: '#story',
+              start: 'top 75%',
+              end: 'bottom 60%',
+              scrub: 0.9,
+            },
+          }
+        );
+      }
 
       // 5. Timeline vertical hairline draw
       const line = document.querySelector('.timeline-line');
@@ -444,7 +437,7 @@ export default function App() {
       >
         <div className="max-w-6xl mx-auto w-full grid grid-cols-1 md:grid-cols-[1.15fr_0.85fr] gap-10 md:gap-14 items-center">
           {/* Left: Editorial Typography */}
-          <div className="space-y-5 text-left">
+          <div className="hero-text-exit space-y-5 text-left">
             <p className="hero-stagger font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080]">
               {siteContent.hero.kicker}
             </p>
@@ -538,76 +531,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* 02 / CHAPTERS IN TIME — EDITORIAL PHOTO SHOWCASES (Priority 5) */}
-      <section id="chapters" className="py-24 md:py-36 px-5 sm:px-8 bg-[#FCFBF9]">
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-xl mb-16 md:mb-24 space-y-3">
-            <span className="font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080] block">
-              02 / MEMORIES
-            </span>
-            <h2 className="font-editorial text-4xl sm:text-5xl md:text-6xl text-[#514753] leading-[1.08]">
-              Five moments I still <span className="font-editorial-italic">hold dear.</span>
-            </h2>
-          </div>
-
-          <div className="space-y-24 md:space-y-32">
-            {siteContent.photoChapters.map((chapter, idx) => {
-              const isReversed = idx % 2 === 1;
-              return (
-                <article
-                  key={chapter.number}
-                  className="chapter-row grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center"
-                >
-                  {/* Dominant Photograph in true aspect ratio */}
-                  <div
-                    className={`md:col-span-7 ${
-                      isReversed ? 'md:order-2' : 'md:order-1'
-                    }`}
-                  >
-                    <div
-                      className={`${chapter.ratio} max-h-[68vh] w-full mx-auto overflow-hidden bg-[#E6DCEB] border border-[#C5B6CC]/45`}
-                    >
-                      <img
-                        src={chapter.photo}
-                        alt={chapter.title}
-                        loading="lazy"
-                        className="chapter-img w-full h-full object-cover object-top"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Minimal Editorial Typography */}
-                  <div
-                    className={`chapter-text md:col-span-5 space-y-4 ${
-                      isReversed ? 'md:order-1 md:pr-6' : 'md:order-2 md:pl-6'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 font-mono-meta text-[11px] tracking-[0.2em] uppercase text-[#7C7080]">
-                      <span className="text-[#514753] font-medium">
-                        {chapter.number} / {chapter.total}
-                      </span>
-                      <span className="w-6 h-[1px] bg-[#C5B6CC]" />
-                      <span>{chapter.subtitle}</span>
-                    </div>
-
-                    <h3 className="font-editorial text-3xl sm:text-4xl text-[#514753] leading-tight">
-                      {chapter.title}
-                    </h3>
-
-                    <p className="text-base sm:text-lg text-[#7C7080] leading-relaxed">
-                      {chapter.description}
-                    </p>
-
-                    <p className="font-editorial-italic text-xl text-[#514753] pt-2 border-t border-[#E6DCEB]">
-                      {chapter.note}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* 02 / CHAPTERS IN TIME — CONTINUOUS PINNED SCRUBBED SHOWCASE */}
+      <ContinuousChapters reducedMotion={reducedMotion} />
 
       {/* 02B / OUR LITTLE WORLD — SCATTERED-TO-JOINED PHOTO COLLAGE */}
       <ScatteredCollage reducedMotion={reducedMotion} />
